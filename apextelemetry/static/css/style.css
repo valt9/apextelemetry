@@ -1,0 +1,233 @@
+
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, #000 0%, #181818 60%, #e10600 100%);
+    color: #fff;
+    font-family: 'Titillium Web', 'Segoe UI', Arial, sans-serif;
+}
+
+
+main {
+    flex: 1;
+}
+
+
+
+.card {
+    border: 2px solid #e10600;
+    border-radius: 12px;
+    background: #111;
+    box-shadow: 0 4px 16px rgba(225,6,0,0.10), 0 1.5px 0 #fff inset;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+
+.card-header {
+    background: linear-gradient(90deg, #e10600 60%, #000 100%);
+    color: #fff;
+    border-bottom: 2px solid #fff;
+}
+
+.card:hover {
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: 0 8px 32px rgba(225,6,0,0.18);
+}
+
+
+
+.navbar-brand {
+    font-weight: 900;
+    font-size: 2rem;
+    letter-spacing: 2px;
+    color: #fff !important;
+    text-shadow: 1px 1px 8px #e10600, 0 0 2px #fff;
+}
+
+.navbar {
+    border-bottom: 4px solid #e10600;
+    background: #000 !important;
+}
+
+
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    background: #181818;
+    border-radius: 10px;
+    border: 1.5px solid #fff;
+    box-shadow: 0 2px 8px rgba(225,6,0,0.10);
+    padding: 1rem;
+}
+
+
+
+footer {
+    margin-top: auto;
+    background: #000 !important;
+    border-top: 3px solid #e10600;
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+
+
+.btn {
+    border-radius: 5px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.btn-warning, .btn-danger, .btn-primary, .btn-success {
+    border: none;
+    color: #fff !important;
+    box-shadow: 0 2px 8px rgba(225,6,0,0.10);
+}
+
+.btn-warning {
+    background: linear-gradient(90deg, #e10600 60%, #fff 100%);
+    color: #fff !important;
+    border: 1.5px solid #e10600;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(90deg, #e10600 40%, #fff 100%);
+    color: #000 !important;
+}
+
+.btn-danger {
+    background: linear-gradient(90deg, #e10600 60%, #900 100%);
+    border: 1.5px solid #e10600;
+    color: #fff !important;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(90deg, #900 60%, #e10600 100%);
+    color: #fff !important;
+}
+
+.btn-primary {
+    background: linear-gradient(90deg, #e10600 0%, #000 100%);
+    color: #fff !important;
+    border: 1.5px solid #fff;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(90deg, #000 0%, #e10600 100%);
+    color: #fff !important;
+}
+
+.btn-success {
+    background: linear-gradient(90deg, #e10600 0%, #000 100%);
+    color: #fff !important;
+    border: 1.5px solid #fff;
+}
+
+.btn-success:hover {
+    background: linear-gradient(90deg, #000 0%, #e10600 100%);
+    color: #fff !important;
+}
+
+
+
+.form-control, .form-select {
+    border-radius: 5px;
+    background: #181818;
+    color: #fff;
+    border: 1.5px solid #e10600;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #fff;
+    box-shadow: 0 0 0 2px #e1060033;
+    background: #181818;
+    color: #fff;
+}
+
+
+
+.alert {
+    border-radius: 10px;
+    border-left: 6px solid #e10600;
+    background: #181818;
+    color: #fff;
+}
+
+/* Text readability improvements */
+.text-muted {
+    color: #e0e0e0 !important;
+}
+
+.card-text {
+    color: #fff !important;
+}
+
+.card-text strong {
+    color: #fff !important;
+    font-weight: 700;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #fff !important;
+}
+
+p {
+    color: #fff !important;
+}
+
+.card-title {
+    color: #fff !important;
+}
+
+.small, .form-text {
+    color: #c0c0c0 !important;
+}
+
+ul {
+    color: #fff !important;
+}
+
+ul li {
+    color: #fff !important;
+}
+
+.alert {
+    color: #fff !important;
+}
+
+.alert-info {
+    background: #1a3a4a !important;
+    border-left-color: #0066cc !important;
+    color: #fff !important;
+}
+
+/* F1 racing stripes accent */
+
+.f1-stripes {
+    height: 6px;
+    width: 100%;
+    background: repeating-linear-gradient(90deg, #e10600, #e10600 20px, #fff 20px, #fff 40px, #000 40px, #000 60px);
+    margin-bottom: 1rem;
+    border-radius: 3px;
+}
+
+/* F1-inspired section titles */
+
+.section-title {
+    font-size: 1.7rem;
+    font-weight: 900;
+    color: #e10600;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 8px #fff;
+    border-left: 8px solid #e10600;
+    padding-left: 0.7rem;
+    margin-bottom: 1.2rem;
+    background: #000;
+    border-radius: 3px;
+}
+

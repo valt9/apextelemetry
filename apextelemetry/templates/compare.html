@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Compare Drivers - Apex Telemetry{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0"><i class="bi bi-graph-up-arrow"></i> Compare Drivers - Historical Data</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Select two drivers and a race date to compare their telemetry data side-by-side.</p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> <strong>Modern Era Data:</strong> This feature uses F1 race data from the modern era (2000-present), including all current and recent drivers.
+                </div>
+                
+                <form method="POST" action="{{ url_for('compare_drivers') }}" id="compareForm">
+                    <div class="row">
+                        <div class="col-md-5 mb-3">
+                            <label for="driver1_name" class="form-label">
+                                <strong>Driver 1</strong>
+                            </label>
+                            <select class="form-select" id="driver1_name" name="driver1_name" required>
+                                <option value="">Select Driver 1</option>
+                                {% for driver in drivers %}
+                                <option value="{{ driver.name }}">{{ driver.name }} ({{ driver.code }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end justify-content-center mb-3">
+                            <h4 class="text-muted">VS</h4>
+                        </div>
+                        <div class="col-md-5 mb-3">
+                            <label for="driver2_name" class="form-label">
+                                <strong>Driver 2</strong>
+                            </label>
+                            <select class="form-select" id="driver2_name" name="driver2_name" required>
+                                <option value="">Select Driver 2</option>
+                                {% for driver in drivers %}
+                                <option value="{{ driver.name }}">{{ driver.name }} ({{ driver.code }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="race_search" class="form-label">
+                            <strong>Search Race</strong>
+                        </label>
+                        <input type="text" class="form-control" id="race_search" placeholder="Type to search races...">
+                        <small class="form-text text-muted">Start typing to filter races</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="race_selection" class="form-label">
+                            <strong>Race</strong>
+                        </label>
+                        <select class="form-select" id="race_selection" name="race_selection" required disabled>
+                            <option value="">Select both drivers first...</option>
+                        </select>
+                        <small class="form-text text-muted">Races shown are those both drivers participated in</small>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i> Compare Drivers
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card shadow mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> About Driver Comparison</h5>
+            </div>
+            <div class="card-body">
+                <p>The comparison feature allows you to analyze historical telemetry data from two different drivers side-by-side. You can compare:</p>
+                <ul>
+                    <li>Speed and RPM over time</li>
+                    <li>Lap times and sector times</li>
+                    <li>Tire temperature and wear</li>
+                    <li>Race positions</li>
+                </ul>
+                <p class="mb-0"><strong>Note:</strong> Data is generated based on realistic F1 parameters for the selected drivers and date.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const driver1Select = document.getElementById('driver1_name');
+const driver2Select = document.getElementById('driver2_name');
+const raceSearch = document.getElementById('race_search');
+const raceSelect = document.getElementById('race_selection');
+let allRaces = [];
+
+// Prevent selecting the same driver twice
+driver1Select.addEventListener('change', function() {
+    const driver2 = driver2Select;
+    if (this.value === driver2.value && this.value !== '') {
+        alert('Please select two different drivers');
+        this.value = '';
+    }
+    loadRaces();
+});
+
+driver2Select.addEventListener('change', function() {
+    const driver1 = driver1Select;
+    if (this.value === driver1.value && this.value !== '') {
+        alert('Please select two different drivers');
+        this.value = '';
+    }
+    loadRaces();
+});
+
+async function loadRaces() {
+    const driver1 = driver1Select.value;
+    const driver2 = driver2Select.value;
+    
+    raceSelect.disabled = true;
+    raceSelect.innerHTML = '<option value="">Loading races...</option>';
+    raceSearch.value = '';
+    
+    if (!driver1 || !driver2) {
+        raceSelect.innerHTML = '<option value="">Select both drivers first...</option>';
+        return;
+    }
+    
+    try {
+        // Get races for both drivers and find intersection
+        const [races1, races2] = await Promise.all([
+            fetch(`/api/driver-races/${encodeURIComponent(driver1)}`).then(r => r.json()),
+            fetch(`/api/driver-races/${encodeURIComponent(driver2)}`).then(r => r.json())
+        ]);
+        
+        console.log(`Found ${races1.length} races for ${driver1}`);
+        console.log(`Found ${races2.length} races for ${driver2}`);
+        
+        // Validate that we got arrays
+        if (!Array.isArray(races1) || !Array.isArray(races2)) {
+            console.error('Invalid race data received:', {races1, races2});
+            raceSelect.innerHTML = '<option value="">Error: Invalid race data received</option>';
+            return;
+        }
+        
+        // Find common races (same year and round)
+        const commonRaces = races1.filter(r1 => 
+            races2.some(r2 => r1.year === r2.year && r1.round === r2.round)
+        );
+        
+        console.log(`Found ${commonRaces.length} common races`);
+        
+        allRaces = commonRaces;
+        
+        if (commonRaces.length === 0) {
+            raceSelect.innerHTML = '<option value="">No common races found for these drivers. They may not have raced together, or API data is unavailable.</option>';
+        } else {
+            updateRaceOptions(commonRaces);
+            raceSelect.disabled = false;
+        }
+    } catch (error) {
+        console.error('Error fetching races:', error);
+        raceSelect.innerHTML = '<option value="">Error loading races. Please try again.</option>';
+        console.log('Driver1:', driver1, 'Driver2:', driver2);
+    }
+}
+
+raceSearch.addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const filtered = allRaces.filter(race => 
+        race.display_name.toLowerCase().includes(searchTerm) ||
+        race.name.toLowerCase().includes(searchTerm) ||
+        race.circuit.toLowerCase().includes(searchTerm) ||
+        race.location.toLowerCase().includes(searchTerm) ||
+        race.country.toLowerCase().includes(searchTerm)
+    );
+    updateRaceOptions(filtered);
+});
+
+function updateRaceOptions(races) {
+    raceSelect.innerHTML = '';
+    if (races.length === 0) {
+        raceSelect.innerHTML = '<option value="">No races match your search</option>';
+        return;
+    }
+    
+    races.forEach(race => {
+        const option = document.createElement('option');
+        option.value = `${race.year}|${race.round}|${race.date}`;
+        option.textContent = race.display_name;
+        raceSelect.appendChild(option);
+    });
+}
+</script>
+{% endblock %}
+

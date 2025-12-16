@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Apex Telemetry{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1><i class="bi bi-speedometer2"></i> Dashboard</h1>
+        <p class="text-muted">Manage your F1 telemetry sessions</p>
+    </div>
+    <div class="col-auto">
+        <a href="{{ url_for('compare_drivers') }}" class="btn btn-info me-2">
+            <i class="bi bi-graph-up-arrow"></i> Compare Drivers
+        </a>
+        <a href="{{ url_for('new_session') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> New Session
+        </a>
+    </div>
+</div>
+
+{% if sessions %}
+<div class="row">
+    {% for session in sessions %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-flag"></i> {{ session.name }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    <strong>Driver:</strong> {{ session.driver_name }}<br>
+                    <strong>Date:</strong> {{ session.race_date.strftime('%Y-%m-%d') }}<br>
+                    <strong>Created:</strong> {{ session.created_at.strftime('%Y-%m-%d %H:%M') }}
+                </p>
+                <p class="text-muted small">
+                    <i class="bi bi-database"></i> {{ session.car_data|length }} data points
+                </p>
+            </div>
+            <div class="card-footer bg-transparent">
+                <div class="btn-group w-100" role="group">
+                    <a href="{{ url_for('view_session', session_id=session.id) }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-eye"></i> View
+                    </a>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteSession({{ session.id }})">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if comparisons %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="bi bi-bar-chart-line"></i> Saved Comparisons</h2>
+    </div>
+</div>
+<div class="row">
+    {% for comp in comparisons %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-graph-up-arrow"></i> {{ comp.driver1_name }} vs {{ comp.driver2_name }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    <strong>Race Date:</strong> {{ comp.race_date or 'N/A' }}<br>
+                    <strong>Saved:</strong> {{ comp.created_at.strftime('%Y-%m-%d %H:%M') }}
+                </p>
+            </div>
+            <div class="card-footer bg-transparent">
+                <div class="btn-group w-100" role="group">
+                    <a href="{{ url_for('view_comparison', comp_id=comp.id) }}" class="btn btn-sm btn-success">
+                        <i class="bi bi-eye"></i> View
+                    </a>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteComparison({{ comp.id }})">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if not sessions and not comparisons %}
+<div class="alert alert-info">
+    <h4 class="alert-heading">No sessions yet!</h4>
+    <p>Create your first F1 telemetry session to start analyzing race data.</p>
+    <hr>
+    <a href="{{ url_for('new_session') }}" class="btn btn-primary">Create Session</a>
+</div>
+{% endif %}
+
+<!-- Account Management Section -->
+<div class="row mt-5">
+    <div class="col">
+        <h2><i class="bi bi-person-gear"></i> Account Management</h2>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Account Information</h5>
+                        <p><strong>Username:</strong> {{ current_user.username }}</p>
+                        <p><strong>Email:</strong> {{ current_user.email }}</p>
+                        <p><strong>Member since:</strong> {{ current_user.created_at.strftime('%Y-%m-%d') }}</p>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <h5>Account Actions</h5>
+                        <a href="{{ url_for('change_password') }}" class="btn btn-warning me-2">
+                            <i class="bi bi-key"></i> Change Password
+                        </a>
+                        <a href="{{ url_for('delete_account') }}" class="btn btn-danger">
+                            <i class="bi bi-person-x"></i> Delete Account
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function deleteSession(sessionId) {
+    if (confirm('Are you sure you want to delete this session? All associated data will be lost.')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/session/${sessionId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function deleteComparison(compId) {
+    if (confirm('Are you sure you want to delete this comparison? This action cannot be undone.')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/comparison/${compId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}
+

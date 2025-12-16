@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}
+Compare: {{ driver1_name }} vs {{ driver2_name }} - Apex Telemetry
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+    canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+    .driver-card {
+        border-left: 4px solid;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+    .driver1-card { border-left-color: #E10600; }
+    .driver2-card { border-left-color: #C0C0C0; }
+    .stat-card {
+        text-align: center;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 5px;
+        margin: 0.5rem;
+    }
+    .racing-stripe {
+        background: repeating-linear-gradient(
+            90deg,
+            #E10600 0px,
+            #E10600 10px,
+            #FFFFFF 10px,
+            #FFFFFF 20px
+        );
+        height: 4px;
+        margin: 10px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="racing-stripe"></div>
+<div class="row mb-4">
+    <div class="col">
+        <h1><i class="bi bi-graph-up-arrow"></i> Driver Comparison</h1>
+        <p class="text-muted">
+            <strong>{{ driver1_name }}</strong> vs
+            <strong>{{ driver2_name }}</strong> |
+            Race Date: <strong>{{ race_date }}</strong>
+        </p>
+    </div>
+    <div class="col-auto">
+        <form action="{{ url_for('save_comparison') }}" method="post" style="display: inline;">
+            <button type="submit" class="btn btn-success me-2">
+                <i class="bi bi-save"></i> Save Comparison
+            </button>
+        </form>
+        <a href="{{ url_for('compare_drivers') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> New Comparison
+        </a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+            <i class="bi bi-house-door"></i> Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- STAT SUMMARY -->
+<div class="row mb-4">
+    {% for driver, color in [(1, 'primary'), (2, 'danger')] %}
+    <div class="col-md-6">
+        <div class="card driver-card driver{{ driver }}-card shadow-sm">
+            <div class="card-header bg-{{ color }} text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-circle"></i>
+                    {{ driver1_name if driver == 1 else driver2_name }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4 stat-card">
+                        <h6 class="text-muted">Avg Speed</h6>
+                        <h4 id="driver{{ driver }}_avg_speed">-</h4>
+                        <small>km/h</small>
+                    </div>
+                    <div class="col-4 stat-card">
+                        <h6 class="text-muted">Best Lap</h6>
+                        <h4 id="driver{{ driver }}_best_lap">-</h4>
+                        <small>s</small>
+                    </div>
+                    <div class="col-4 stat-card">
+                        <h6 class="text-muted">Avg Tire Wear</h6>
+                        <h4 id="driver{{ driver }}_avg_wear">-</h4>
+                        <small>%</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- CHARTS -->
+{% set charts = [
+    ('Speed', 'speed', 'line', 'primary'),
+    ('RPM', 'rpm', 'line', 'success'),
+    ('Lap Time', 'lap_time', 'line', 'warning'),
+    ('Tire Temp', 'tire_temp', 'line', 'info'),
+    ('Tire Wear', 'tire_wear', 'bar', 'danger'),
+    ('Position', 'position', 'line', 'secondary')
+] %}
+
+{% for title, field, type, color in charts %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-{{ color }} {% if color != 'warning' %}text-white{% endif %}">
+                <h5 class="mb-0">
+                    {{ title }} Comparison
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="{{ field }}Chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+<div class="racing-stripe"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ---------- DATA ---------- */
+const driver1Name = {{ (driver1_name or 'Unknown') | tojson }};
+const driver2Name = {{ (driver2_name or 'Unknown') | tojson }};
+const driver1Data = {{ data1 | default([]) | tojson }};
+const driver2Data = {{ data2 | default([]) | tojson }};
+
+/* ---------- STATS ---------- */
+function calcStats(data, prefix) {
+    if (!data || !data.length) return;
+
+    const avg = arr => (arr.reduce((a,b)=>a+b,0) / arr.length).toFixed(1);
+
+    document.getElementById(prefix+'_avg_speed').textContent =
+        avg(data.map(d => Number(d.speed)||0));
+
+    document.getElementById(prefix+'_best_lap').textContent =
+        Math.min(...data.map(d => Number(d.lap_time)||Infinity)).toFixed(3);
+
+    document.getElementById(prefix+'_avg_wear').textContent =
+        avg(data.map(d => Number(d.tire_wear)||0));
+}
+
+calcStats(driver1Data, 'driver1');
+calcStats(driver2Data, 'driver2');
+
+/* ---------- CHART FACTORY ---------- */
+function createChart(id, data1, label1, data2, label2, field, type, color1, color2) {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+
+    new Chart(ctx, {
+        type: type,
+        data: {
+            labels: data1.map((_, i) => `Lap ${i+1}`),
+            datasets: [{
+                label: label1,
+                data: data1.map(d => Number(d[field]) || 0),
+                borderColor: color1,
+                backgroundColor: type === 'bar' ? color1.replace('rgb','rgba').replace(')',',0.7)') : color1.replace('rgb','rgba').replace(')',',0.1)'),
+                tension: 0.1,
+                stepped: field === 'position'
+            }, {
+                label: label2,
+                data: data2.map(d => Number(d[field]) || 0),
+                borderColor: color2,
+                backgroundColor: type === 'bar' ? color2.replace('rgb','rgba').replace(')',',0.7)') : color2.replace('rgb','rgba').replace(')',',0.1)'),
+                tension: 0.1,
+                stepped: field === 'position'
+            }]
+        },
+        options: {
+            responsive: true,
+            aspectRatio: false,
+            scales: field === 'position' ? {
+                y: { reverse: true, beginAtZero: false }
+            } : {},
+        }
+    });
+}
+
+/* ---------- INIT ---------- */
+document.addEventListener('DOMContentLoaded', () => {
+    createChart('speedChart', driver1Data, driver1Name, driver2Data, driver2Name, 'speed', 'line', 'rgb(13,110,253)', 'rgb(220,53,69)');
+    createChart('rpmChart', driver1Data, driver1Name, driver2Data, driver2Name, 'rpm', 'line', 'rgb(25,135,84)', 'rgb(220,53,69)');
+    createChart('lap_timeChart', driver1Data, driver1Name, driver2Data, driver2Name, 'lap_time', 'line', 'rgb(255,193,7)', 'rgb(220,53,69)');
+    createChart('tire_tempChart', driver1Data, driver1Name, driver2Data, driver2Name, 'tire_temp', 'line', 'rgb(23,162,184)', 'rgb(220,53,69)');
+    createChart('tire_wearChart', driver1Data, driver1Name, driver2Data, driver2Name, 'tire_wear', 'bar', 'rgb(220,53,69)', 'rgb(108,117,125)');
+    createChart('positionChart', driver1Data, driver1Name, driver2Data, driver2Name, 'position', 'line', 'rgb(13,110,253)', 'rgb(108,117,125)');
+});
+</script>
+{% endblock %}
+

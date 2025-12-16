@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Account - Apex Telemetry{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-lg border-danger">
+            <div class="card-header bg-danger text-white">
+                <h3 class="card-title mb-0">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Delete Account
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h5 class="alert-heading">Warning: This action cannot be undone!</h5>
+                    <p>Deleting your account will permanently remove:</p>
+                    <ul class="mb-0">
+                        <li>All your telemetry sessions and race data</li>
+                        <li>All saved driver comparisons</li>
+                        <li>Your account information and login credentials</li>
+                        <li>Any associated data in the system</li>
+                    </ul>
+                </div>
+
+                <div class="mb-4">
+                    <p><strong>Account Details:</strong></p>
+                    <ul>
+                        <li><strong>Username:</strong> {{ current_user.username }}</li>
+                        <li><strong>Email:</strong> {{ current_user.email }}</li>
+                        <li><strong>Member since:</strong> {{ current_user.created_at.strftime('%B %d, %Y') }}</li>
+                        <li><strong>Sessions:</strong> {{ session_count }}</li>
+                        <li><strong>Comparisons:</strong> {{ comparison_count }}</li>
+                    </ul>
+                </div>
+
+                <p class="text-muted">
+                    If you're sure you want to proceed, please type <strong>"DELETE"</strong> in the field below and click the delete button.
+                </p>
+
+                <form method="POST" action="{{ url_for('delete_account') }}">
+                    <div class="mb-3">
+                        <label for="confirmation" class="form-label">Type "DELETE" to confirm:</label>
+                        <input type="text" class="form-control" id="confirmation" name="confirmation" required
+                               pattern="DELETE" title="Please type DELETE to confirm">
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary me-md-2">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger" onclick="return confirmDeletion()">
+                            <i class="bi bi-person-x"></i> Delete Account Permanently
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDeletion() {
+    const confirmation = document.getElementById('confirmation').value;
+    if (confirmation !== 'DELETE') {
+        alert('Please type "DELETE" to confirm account deletion.');
+        return false;
+    }
+
+    return confirm('Are you absolutely sure you want to delete your account? This action cannot be undone and all your data will be permanently lost.');
+}
+</script>
+
+{% endblock %}
